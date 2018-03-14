@@ -168,11 +168,11 @@ begin
   graphics_lenght <= conv_std_logic_vector(MEM_SIZE*8*8, GRAPH_MEM_ADDR_WIDTH);
   
   -- removed to inputs pin
-  direct_mode <= '1';
-  display_mode     <= "10";  -- 01 - text mode, 10 - graphics mode, 11 - text & graphics
+  direct_mode <= '0';
+  display_mode     <= "01";  -- 01 - text mode, 10 - graphics mode, 11 - text & graphics
   
   font_size        <= x"1";
-  show_frame       <= '1';
+  show_frame       <= '0';
   foreground_color <= x"FFFFFF";
   background_color <= x"000000";
   frame_color      <= x"FF0000";
@@ -282,7 +282,39 @@ begin
   --char_address
   --char_value
   --char_we
+  char_we <= '1';
   
+  process(pix_clock_s, reset_n_i) begin
+	if reset_n_i = '0' then
+		char_address <= (others=>'0');
+	elsif rising_edge(pix_clock_s) then
+		if char_address=X"12C0" then
+			char_address<=(others=>'0');
+		else
+			char_address<=char_address+'1';
+		end if;
+	end if;
+  end process;
+  
+  char_value <= 	-- "space" when char_address = X"0"
+						"01" & X"3" when char_address = X"1" else --s
+						"01" & X"4" when char_address = X"2" else --t
+						"00" & X"5" when char_address = X"3" else --e
+						"00" & X"6" when char_address = X"4" else --f
+						"00" & X"1" when char_address = X"5" else --a
+						"00" & X"E" when char_address = X"6" else --n
+						-- "space" when char_address = X"7"
+						"00" & X"A" when char_address = X"8" else --j
+						"00" & X"F" when char_address = X"9" else --o
+						"01" & X"6" when char_address = X"a" else --v
+						"00" & X"1" when char_address = X"b" else --a
+						"00" & X"e" when char_address = X"c" else --n
+						"00" & X"f" when char_address = X"d" else --o
+						"01" & X"6" when char_address = X"e" else --v
+						"00" & X"9" when char_address = X"f" else --i
+						"00" & X"3" when char_address = x"10" else --c
+						"10" & X"0"; --"space"
+						
   -- koristeci signale realizovati logiku koja pise po GRAPH_MEM
   --pixel_address
   --pixel_value

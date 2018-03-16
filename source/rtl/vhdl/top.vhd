@@ -157,9 +157,11 @@ architecture rtl of top is
   signal dir_pixel_column    : std_logic_vector(10 downto 0);
   signal dir_pixel_row       : std_logic_vector(10 downto 0);
   
-  signal next_addr			  : std_logic_vector(15 downto 0);
-  signal offset				  : std_logic_vector(15 downto 0);
-  signal counter				  : std_logic_vector(31 downto 0);
+  signal offset_graph		  : std_logic_vector(GRAPH_MEM_ADDR_WIDTH-1 downto 0);
+  signal counter_graph		  : std_logic_vector(31 downto 0);
+  
+  signal offset_text		 	  : std_logic_vector(MEM_ADDR_WIDTH-1 downto 0);
+  signal counter_text		  : std_logic_vector(31 downto 0);
 
 begin
 
@@ -293,38 +295,39 @@ begin
 		char_address <= (others=>'0');
 	elsif rising_edge(pix_clock_s) then
 		
-		if counter = X"E4E1C0" then
-			counter <= (others=>'0');
+		if counter_text = X"E4E1C0" then
+			counter_text <= (others=>'0');
+			offset_text <= offset_text + X"1";
 		else
-			counter <= counter + '1';
+			counter_text <= counter_text + X"1";
 		end if;
 		
-		if char_address=X"12C0" then
-			char_address<=(others=>'0');
+		if char_address = X"12C0" then
+			char_address <= (others=>'0');
 		else
-			char_address<=char_address+'1';	
+			char_address <= char_address + offset_text + X"1";	
 		end if;
 		
 	end if;
   end process;
   
   char_value <= 	-- "space" when char_address = X"0"
-						"01" & X"3" when char_address = X"1" else --s
-						"01" & X"4" when char_address = X"2" else --t
-						"00" & X"5" when char_address = X"3" else --e
-						"00" & X"6" when char_address = X"4" else --f
-						"00" & X"1" when char_address = X"5" else --a
-						"00" & X"E" when char_address = X"6" else --n
+						"01" & X"3" when char_address = X"1"+offset_text else --s
+						"01" & X"4" when char_address = X"2"+offset_text else --t
+						"00" & X"5" when char_address = X"3"+offset_text else --e
+						"00" & X"6" when char_address = X"4"+offset_text else --f
+						"00" & X"1" when char_address = X"5"+offset_text else --a
+						"00" & X"E" when char_address = X"6"+offset_text else --n
 						-- "space" when char_address = X"7"
-						"00" & X"A" when char_address = X"8" else --j
-						"00" & X"F" when char_address = X"9" else --o
-						"01" & X"6" when char_address = X"a" else --v
-						"00" & X"1" when char_address = X"b" else --a
-						"00" & X"e" when char_address = X"c" else --n
-						"00" & X"f" when char_address = X"d" else --o
-						"01" & X"6" when char_address = X"e" else --v
-						"00" & X"9" when char_address = X"f" else --i
-						"00" & X"3" when char_address = x"10" else --c
+						"00" & X"A" when char_address = X"8"+offset_text else --j
+						"00" & X"F" when char_address = X"9"+offset_text else --o
+						"01" & X"6" when char_address = X"a"+offset_text else --v
+						"00" & X"1" when char_address = X"b"+offset_text else --a
+						"00" & X"e" when char_address = X"c"+offset_text else --n
+						"00" & X"f" when char_address = X"d"+offset_text else --o
+						"01" & X"6" when char_address = X"e"+offset_text else --v
+						"00" & X"9" when char_address = X"f"+offset_text else --i
+						"00" & X"3" when char_address = x"10"+offset_text else --c
 						"10" & X"0"; --"space"
 						
   -- koristeci signale realizovati logiku koja pise po GRAPH_MEM
@@ -339,17 +342,17 @@ begin
 	if reset_n_i = '0' then
 		pixel_address <= (others=>'0');
 	elsif rising_edge(pix_clock_s) then	
-		if counter = X"E4E1C0" then
-			counter <= (others => '0');
-			next_addr <= next_addr + X"1";
+		if counter_graph = X"E4E1C0" then
+			counter_graph <= (others => '0');
+			offset_graph <= offset_graph + X"1";
 		else
-			counter <= counter + X"1";
+			counter_graph <= counter_graph + X"1";
 		end if;
 		
 		if pixel_address = X"2580" then
 			pixel_address <= (others => '0');
 		else
-			pixel_address <= pixel_address+next_addr+X"1";
+			pixel_address <= pixel_address+offset_graph+X"1";
 		end if;
 	else
 		pixel_address <= pixel_address;
@@ -357,19 +360,17 @@ begin
 	
   end process;
   
-  offset <= next_addr;
-  
-  pixel_value <= 	X"FFFFFFFF" when pixel_address = X"00000000"+offset else
-						X"FFFFFFFF" when pixel_address = X"00000014"+offset else
-						X"FFFFFFFF" when pixel_address = X"00000028"+offset else
-						X"FFFFFFFF" when pixel_address = X"0000003c"+offset else
-						X"FFFFFFFF" when pixel_address = X"00000050"+offset else
-						X"FFFFFFFF" when pixel_address = X"00000064"+offset else
-						X"FFFFFFFF" when pixel_address = X"00000078"+offset else
-						X"FFFFFFFF" when pixel_address = X"0000008c"+offset else
-						X"FFFFFFFF" when pixel_address = X"000000A0"+offset else
-						X"FFFFFFFF" when pixel_address = X"000000B4"+offset else
-						X"FFFFFFFF" when pixel_address = X"000000c8"+offset else
+  pixel_value <= 	X"FFFFFFFF" when pixel_address = X"00000000"+offset_graph else
+						X"FFFFFFFF" when pixel_address = X"00000014"+offset_graph else
+						X"FFFFFFFF" when pixel_address = X"00000028"+offset_graph else
+						X"FFFFFFFF" when pixel_address = X"0000003c"+offset_graph else
+						X"FFFFFFFF" when pixel_address = X"00000050"+offset_graph else
+						X"FFFFFFFF" when pixel_address = X"00000064"+offset_graph else
+						X"FFFFFFFF" when pixel_address = X"00000078"+offset_graph else
+						X"FFFFFFFF" when pixel_address = X"0000008c"+offset_graph else
+						X"FFFFFFFF" when pixel_address = X"000000A0"+offset_graph else
+						X"FFFFFFFF" when pixel_address = X"000000B4"+offset_graph else
+						X"FFFFFFFF" when pixel_address = X"000000c8"+offset_graph else
 						X"00000000";
   
 end rtl;

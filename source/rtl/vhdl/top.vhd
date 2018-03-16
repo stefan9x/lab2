@@ -158,6 +158,7 @@ architecture rtl of top is
   signal dir_pixel_row       : std_logic_vector(10 downto 0);
   
   signal next_addr			  : std_logic_vector(15 downto 0);
+  signal offset				  : std_logic_vector(15 downto 0);
   signal counter				  : std_logic_vector(31 downto 0);
 
 begin
@@ -334,38 +335,41 @@ begin
   pixel_we <= '1';
   
   process(pix_clock_s, reset_n_i) begin
-	
-	
+  
 	if reset_n_i = '0' then
 		pixel_address <= (others=>'0');
-	elsif rising_edge(pix_clock_s) then
-		
-		if (counter = X"E4E1C0") then
+	elsif rising_edge(pix_clock_s) then	
+		if counter = X"E4E1C0" then
 			counter <= (others => '0');
 			next_addr <= next_addr + X"1";
 		else
 			counter <= counter + X"1";
 		end if;
 		
-		if pixel_address=X"2580" then
+		if pixel_address = X"2580" then
 			pixel_address <= (others => '0');
 		else
 			pixel_address <= pixel_address+next_addr+X"1";
 		end if;
+	else
+		pixel_address <= pixel_address;
 	end if;
+	
   end process;
   
-  pixel_value <= 	X"FFFFFFFF" when pixel_address = X"00000000"+next_addr else
-						X"FFFFFFFF" when pixel_address = X"00000014"+next_addr else
-						X"FFFFFFFF" when pixel_address = X"00000028"+next_addr else
-						X"FFFFFFFF" when pixel_address = X"0000003c"+next_addr else
-						X"FFFFFFFF" when pixel_address = X"00000050"+next_addr else
-						X"FFFFFFFF" when pixel_address = X"00000064"+next_addr else
-						X"FFFFFFFF" when pixel_address = X"00000078"+next_addr else
-						X"FFFFFFFF" when pixel_address = X"0000008c"+next_addr else
-						X"FFFFFFFF" when pixel_address = X"000000A0"+next_addr else
-						X"FFFFFFFF" when pixel_address = X"000000B4"+next_addr else
-						X"FFFFFFFF" when pixel_address = X"000000c8"+next_addr else
+  offset <= next_addr;
+  
+  pixel_value <= 	X"FFFFFFFF" when pixel_address = X"00000000"+offset else
+						X"FFFFFFFF" when pixel_address = X"00000014"+offset else
+						X"FFFFFFFF" when pixel_address = X"00000028"+offset else
+						X"FFFFFFFF" when pixel_address = X"0000003c"+offset else
+						X"FFFFFFFF" when pixel_address = X"00000050"+offset else
+						X"FFFFFFFF" when pixel_address = X"00000064"+offset else
+						X"FFFFFFFF" when pixel_address = X"00000078"+offset else
+						X"FFFFFFFF" when pixel_address = X"0000008c"+offset else
+						X"FFFFFFFF" when pixel_address = X"000000A0"+offset else
+						X"FFFFFFFF" when pixel_address = X"000000B4"+offset else
+						X"FFFFFFFF" when pixel_address = X"000000c8"+offset else
 						X"00000000";
   
 end rtl;
